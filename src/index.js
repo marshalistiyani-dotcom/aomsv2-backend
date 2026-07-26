@@ -13,6 +13,8 @@ import taskRoutes from './routes/tasks.js'
 import eventRoutes from './routes/events.js'
 import kpiRoutes from './routes/kpi.js'
 import reportRoutes from './routes/reports.js'
+import metricRoutes from './routes/metrics.js'
+import dailyMetricRoutes from './routes/dailyMetrics.js'
 import userRoutes from './routes/users.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -32,6 +34,8 @@ app.use('/api/tasks', taskRoutes)
 app.use('/api/events', eventRoutes)
 app.use('/api/kpi', kpiRoutes)
 app.use('/api/reports', reportRoutes)
+app.use('/api/metrics', metricRoutes)
+app.use('/api/daily-metrics', dailyMetricRoutes)
 app.use('/api/users', userRoutes)
 
   const frontendDist = path.join(__dirname, '../public')

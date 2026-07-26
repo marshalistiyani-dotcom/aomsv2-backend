@@ -48,6 +48,21 @@ router.put('/:id', async (req, res) => {
   res.json(event.toObject())
 })
 
+router.post('/:id/report', async (req, res) => {
+  const event = await Event.findOne({ id: req.params.id })
+  if (!event) return res.status(404).json({ error: 'Event not found' })
+  if (event.status !== 'completed') return res.status(400).json({ error: 'Event must be completed to add report' })
+  const { totalParticipants, notes } = req.body
+  event.report = {
+    totalParticipants: totalParticipants || 0,
+    notes: notes || '',
+    createdAt: new Date().toISOString(),
+  }
+  event.updatedAt = new Date().toISOString()
+  await event.save()
+  res.json(event.toObject())
+})
+
 router.delete('/:id', async (req, res) => {
   await Event.deleteOne({ id: req.params.id })
   res.json({ success: true })
