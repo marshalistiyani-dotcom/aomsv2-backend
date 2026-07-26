@@ -6,7 +6,6 @@ import { generateId } from '../utils.js'
 
 const router = Router()
 router.use(authenticate)
-router.use(adminOnly)
 
 router.get('/', async (req, res) => {
   const users = await User.find().sort({ createdAt: -1 })
@@ -20,7 +19,7 @@ router.get('/:id', async (req, res) => {
   res.json(rest)
 })
 
-router.post('/', async (req, res) => {
+router.post('/', adminOnly, async (req, res) => {
   const { name, email, password, role, department } = req.body
   if (!name || !email || !password) return res.status(400).json({ error: 'Name, email, password required' })
   const existing = await User.findOne({ email })
@@ -35,7 +34,7 @@ router.post('/', async (req, res) => {
   res.status(201).json({ id: user.id, name: user.name, email: user.email, role: user.role, department: user.department, createdAt: user.createdAt })
 })
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', adminOnly, async (req, res) => {
   const user = await User.findOne({ id: req.params.id })
   if (!user) return res.status(404).json({ error: 'User not found' })
   const allowed = ['name', 'email', 'role', 'department']
@@ -52,7 +51,7 @@ router.put('/:id', async (req, res) => {
   res.json({ id: user.id, name: user.name, email: user.email, role: user.role, department: user.department, createdAt: user.createdAt })
 })
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', adminOnly, async (req, res) => {
   await User.deleteOne({ id: req.params.id })
   res.json({ success: true })
 })
