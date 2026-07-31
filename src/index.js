@@ -4,6 +4,7 @@ import express from 'express'
 import cors from 'cors'
 import path from 'path'
 import os from 'os'
+import mongoose from 'mongoose'
 import { fileURLToPath } from 'url'
 import { connectDB } from './config/database.js'
 import { seedDatabase } from './seed.js'
@@ -40,6 +41,16 @@ app.use('/api/daily-metrics', dailyMetricRoutes)
 app.use('/api/leads', leadEntryRoutes)
 app.use('/api/users', userRoutes)
 
+app.get('/api/health', (req, res) => {
+  const ready = mongoose.connection.readyState
+  res.json({
+    status: ready === 1 ? 'ok' : 'degraded',
+    mongo: ready === 1 ? 'connected' : 'disconnected',
+    db: ready,
+    timestamp: new Date().toISOString(),
+  })
+})
+
   const frontendDist = path.join(__dirname, '../public')
 app.use(express.static(frontendDist))
 app.get('*', (req, res) => {
@@ -48,8 +59,11 @@ app.get('*', (req, res) => {
 
 app.use(errorHandler)
 
-await connectDB()
-await seedDatabase()
+connectDB()
+  .then(() => seedDatabase())
+  .catch((err) => {
+    console.error('Startup error:', err)
+  })
 
 app.listen(PORT, '0.0.0.0', () => {
   const nets = os.networkInterfaces()

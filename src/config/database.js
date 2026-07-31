@@ -6,9 +6,19 @@ export async function connectDB() {
     console.error('MONGODB_URI not set in .env')
     process.exit(1)
   }
-  await mongoose.connect(uri)
-  console.log('MongoDB connected:', uri.replace(/\/\/[^:]+:[^@]+@/, '//<user>:<password>@'))
-  return mongoose.connection
+  const safeUri = uri.replace(/\/\/[^:]+:[^@]+@/, '//<user>:<password>@')
+  let attempt = 0
+  for (;;) {
+    attempt += 1
+    try {
+      await mongoose.connect(uri, { serverSelectionTimeoutMS: 10000 })
+      console.log('MongoDB connected:', safeUri)
+      return mongoose.connection
+    } catch (err) {
+      console.error(`[MongoDB] attempt ${attempt} failed (${new Date().toISOString()}): ${err.message}`)
+      await new Promise((resolve) => setTimeout(resolve, 5000))
+    }
+  }
 }
 
 export async function disconnectDB() {
