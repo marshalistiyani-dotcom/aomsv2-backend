@@ -18,7 +18,7 @@ router.get('/:id', async (req, res) => {
 })
 
 router.post('/', async (req, res) => {
-  const { name, description, target, current, unit, department, period } = req.body
+  const { name, description, target, current, dailyTarget, unit, department, period } = req.body
   if (!name) return res.status(400).json({ error: 'Name required' })
   const item = await KPI.create({
     id: generateId(),
@@ -26,6 +26,7 @@ router.post('/', async (req, res) => {
     description: description || '',
     target: target || 0,
     current: current || 0,
+    dailyTarget: dailyTarget || 0,
     unit: unit || '',
     department: department || '',
     period: period || 'monthly',
@@ -36,7 +37,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   const item = await KPI.findOne({ id: req.params.id })
   if (!item) return res.status(404).json({ error: 'KPI not found' })
-  const allowed = ['name', 'description', 'target', 'current', 'unit', 'department', 'period']
+  const allowed = ['name', 'description', 'target', 'current', 'dailyTarget', 'unit', 'department', 'period']
   for (const key of allowed) {
     if (req.body[key] !== undefined) {
       item[key] = req.body[key]

@@ -6,6 +6,7 @@ const kpiSchema = new mongoose.Schema({
   description: { type: String, default: '' },
   target: { type: Number, default: 0 },
   current: { type: Number, default: 0 },
+  dailyTarget: { type: Number, default: 0 },
   unit: { type: String, default: '' },
   department: { type: String, default: '' },
   period: { type: String, default: 'monthly' },
