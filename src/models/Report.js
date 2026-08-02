@@ -8,12 +8,14 @@ const reportSchema = new mongoose.Schema({
   type: { type: String, default: 'daily' },
   date: { type: String },
   period: { type: String },
+  sheetId: { type: String },
   userId: { type: String },
   taskIds: { type: String, default: '[]' },
   taskSummary: { type: String, default: '{}' },
   kpiProgress: { type: String, default: '[]' },
   eventReports: { type: String, default: '[]' },
   metrics: { type: String, default: '{}' },
+  leadSummary: { type: String, default: '{}' },
   createdAt: { type: String, default: () => new Date().toISOString() },
 })
 

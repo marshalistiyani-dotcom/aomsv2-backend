@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs'
 import User from './models/User.js'
-import Task from './models/Task.js'
+import DailySheet from './models/DailySheet.js'
 import Event from './models/Event.js'
 import KPI from './models/KPI.js'
 import Report from './models/Report.js'
@@ -17,13 +17,44 @@ export async function seedDatabase() {
     { id: 'user-5', name: 'Dewi Lestari', email: 'dewi@stifinfamily.com', password: bcrypt.hashSync('123456', 10), role: 'manager', department: 'HR' },
   ])
 
-  const tasks = await Task.create([
-    { id: 'task-1', title: 'Review laporan keuangan bulanan', description: 'Periksa dan validasi semua laporan keuangan untuk bulan ini.', status: 'in_progress', priority: 'high', progress: 65, dueDate: '2026-07-25', timeStart: '08:00', timeEnd: '10:00', assignee: 'user-4', createdBy: 'user-1' },
-    { id: 'task-2', title: 'Persiapan event STIFIn Workshop', description: 'Koordinasi venue, materi, dan peserta untuk workshop.', status: 'todo', priority: 'urgent', progress: 0, dueDate: '2026-07-30', timeStart: '13:00', timeEnd: '15:00', assignee: 'user-2', createdBy: 'user-1' },
-    { id: 'task-3', title: 'Update konten sosial media', description: 'Buat dan jadwalkan postingan.', status: 'done', priority: 'medium', progress: 100, dueDate: '2026-07-22', timeStart: '09:00', timeEnd: '11:30', assignee: 'user-3', createdBy: 'user-3' },
-    { id: 'task-4', title: 'Rekrutmen staff baru', description: 'Seleksi berkas dan jadwalkan interview.', status: 'in_progress', priority: 'high', progress: 40, dueDate: '2026-07-28', timeStart: '10:00', timeEnd: '12:00', assignee: 'user-5', createdBy: 'user-5' },
-    { id: 'task-5', title: 'Backup data server', description: 'Backup rutin data server utama.', status: 'todo', priority: 'low', progress: 0, dueDate: '2026-07-26', timeStart: '07:00', timeEnd: '08:00', assignee: 'user-1', createdBy: 'user-1' },
-    { id: 'task-6', title: 'Evaluasi kinerja tim marketing', description: 'Meeting evaluasi pencapaian Q2.', status: 'todo', priority: 'medium', progress: 0, dueDate: '2026-07-24', timeStart: '14:00', timeEnd: '15:30', assignee: 'user-2', createdBy: 'user-1' },
+  const sheets = await DailySheet.create([
+    {
+      id: 'sheet-1',
+      date: '2026-07-22',
+      userId: 'user-3',
+      createdBy: 'user-1',
+      status: 'reported',
+      items: [
+        { id: 'item-1', timeStart: '09:00', timeEnd: '11:00', work: 'Telepon prospek baru', keterangan: 'Menghubungi kontak prospek untuk penawaran, goal 20 leads', targetLeads: 20, actualTimeStart: '09:00', actualTimeEnd: '11:30', leadsObtained: 18 },
+        { id: 'item-2', timeStart: '13:00', timeEnd: '15:00', work: 'Update konten sosial media', keterangan: 'Jadwalkan postingan mingguan, goal engagement', targetLeads: 0, actualTimeStart: '13:00', actualTimeEnd: '15:00', leadsObtained: 0 },
+      ],
+      notes: 'Koneksi sempat terganggu saat telepon siang.',
+      followedUp: 12,
+    },
+    {
+      id: 'sheet-2',
+      date: '2026-07-22',
+      userId: 'user-4',
+      createdBy: 'user-1',
+      status: 'reported',
+      items: [
+        { id: 'item-3', timeStart: '08:00', timeEnd: '10:00', work: 'Review laporan keuangan bulanan', keterangan: 'Validasi laporan keuangan, goal akurasi data', targetLeads: 0, actualTimeStart: '08:00', actualTimeEnd: '10:00', leadsObtained: 0 },
+      ],
+      notes: 'Dokumen audit selesai 80%.',
+      followedUp: 0,
+    },
+    {
+      id: 'sheet-3',
+      date: '2026-07-23',
+      userId: 'user-3',
+      createdBy: 'user-1',
+      status: 'draft',
+      items: [
+        { id: 'item-4', timeStart: '09:00', timeEnd: '11:00', work: 'Follow up calon peserta tes', keterangan: 'Konfirmasi jadwal tes gelombang 2, goal 15 leads', targetLeads: 15 },
+      ],
+      notes: '',
+      followedUp: 0,
+    },
   ])
 
   const events = await Event.create([

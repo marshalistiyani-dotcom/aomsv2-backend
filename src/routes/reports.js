@@ -1,10 +1,10 @@
 import { Router } from 'express'
 import Report from '../models/Report.js'
-import Task from '../models/Task.js'
 import KPI from '../models/KPI.js'
 import Event from '../models/Event.js'
 import DailyMetric from '../models/DailyMetric.js'
 import Metric from '../models/Metric.js'
+import DailySheet from '../models/DailySheet.js'
 import { authenticate } from '../middleware/auth.js'
 import { generateId } from '../utils.js'
 
@@ -18,6 +18,7 @@ function parseReport(doc) {
   obj.kpiProgress = JSON.parse(obj.kpiProgress || '[]')
   obj.eventReports = JSON.parse(obj.eventReports || '[]')
   obj.metrics = JSON.parse(obj.metrics || '{}')
+  obj.leadSummary = JSON.parse(obj.leadSummary || '{}')
   return obj
 }
 
@@ -40,7 +41,7 @@ router.get('/:id', async (req, res) => {
 })
 
 router.post('/', async (req, res) => {
-  const { title, summary, notes, type, date, period, taskIds, taskSummary, kpiProgress, eventReports, metrics } = req.body
+  const { title, summary, notes, type, date, period, taskIds, taskSummary, kpiProgress, eventReports, metrics, leadSummary } = req.body
   if (!title) return res.status(400).json({ error: 'Title required' })
   const report = await Report.create({
     id: generateId(),
@@ -56,6 +57,7 @@ router.post('/', async (req, res) => {
     kpiProgress: JSON.stringify(kpiProgress || []),
     eventReports: JSON.stringify(eventReports || []),
     metrics: JSON.stringify(metrics || {}),
+    leadSummary: JSON.stringify(leadSummary || {}),
   })
   res.status(201).json(parseReport(report))
 })
@@ -63,10 +65,10 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   const report = await Report.findOne({ id: req.params.id })
   if (!report) return res.status(404).json({ error: 'Report not found' })
-  const allowed = ['title', 'summary', 'notes', 'type', 'date', 'period', 'taskIds', 'taskSummary', 'kpiProgress', 'eventReports', 'metrics']
+  const allowed = ['title', 'summary', 'notes', 'type', 'date', 'period', 'taskIds', 'taskSummary', 'kpiProgress', 'eventReports', 'metrics', 'leadSummary']
   for (const key of allowed) {
     if (req.body[key] !== undefined) {
-      if (key === 'taskIds' || key === 'taskSummary' || key === 'kpiProgress' || key === 'eventReports' || key === 'metrics') {
+      if (key === 'taskIds' || key === 'taskSummary' || key === 'kpiProgress' || key === 'eventReports' || key === 'metrics' || key === 'leadSummary') {
         report[key] = JSON.stringify(req.body[key])
       } else {
         report[key] = req.body[key]
@@ -92,12 +94,12 @@ router.post('/monthly', async (req, res) => {
   const startDate = `${period}-01`
   const endDate = `${period}-${String(daysInMonth).padStart(2, '0')}`
 
-  const tasks = await Task.find({ dueDate: { $gte: startDate, $lte: endDate } })
+  const sheets = await DailySheet.find({ date: { $gte: startDate, $lte: endDate } })
   const taskSummary = {
-    total: tasks.length,
-    completed: tasks.filter(t => t.status === 'done').length,
-    inProgress: tasks.filter(t => t.status === 'in_progress').length,
-    undone: tasks.filter(t => t.status === 'todo').length,
+    total: sheets.length,
+    completed: sheets.filter(s => s.status === 'reported').length,
+    inProgress: sheets.filter(s => s.status !== 'reported').length,
+    undone: 0,
   }
 
   const kpiList = await KPI.find()
@@ -147,6 +149,31 @@ router.post('/monthly', async (req, res) => {
     }
   }
 
+  const periodSheets = await DailySheet.find({ date: { $gte: startDate, $lte: endDate } })
+  const allSheets = await DailySheet.find()
+  const leadByUser = {}
+  const leadSummary = {
+    target: 0,
+    actual: 0,
+    followedUp: 0,
+    allTimeTotal: 0,
+    byUser: leadByUser,
+  }
+  for (const sheet of periodSheets) {
+    const target = (sheet.items || []).reduce((s, it) => s + (Number(it.targetLeads) || 0), 0)
+    const actual = (sheet.items || []).reduce((s, it) => s + (Number(it.leadsObtained) || 0), 0)
+    leadSummary.target += target
+    leadSummary.actual += actual
+    leadSummary.followedUp += Number(sheet.followedUp) || 0
+    if (!leadByUser[sheet.userId]) leadByUser[sheet.userId] = { target: 0, actual: 0, followedUp: 0 }
+    leadByUser[sheet.userId].target += target
+    leadByUser[sheet.userId].actual += actual
+    leadByUser[sheet.userId].followedUp += Number(sheet.followedUp) || 0
+  }
+  for (const sheet of allSheets) {
+    leadSummary.allTimeTotal += (sheet.items || []).reduce((s, it) => s + (Number(it.leadsObtained) || 0), 0)
+  }
+
   const existing = await Report.findOne({ period, type: 'monthly' })
   if (existing) {
     existing.notes = notes || existing.notes
@@ -154,6 +181,7 @@ router.post('/monthly', async (req, res) => {
     existing.kpiProgress = JSON.stringify(kpiProgress)
     existing.eventReports = JSON.stringify(eventReports)
     existing.metrics = JSON.stringify(metrics)
+    existing.leadSummary = JSON.stringify(leadSummary)
     await existing.save()
     return res.json(parseReport(existing))
   }
@@ -170,6 +198,7 @@ router.post('/monthly', async (req, res) => {
     kpiProgress: JSON.stringify(kpiProgress),
     eventReports: JSON.stringify(eventReports),
     metrics: JSON.stringify(metrics),
+    leadSummary: JSON.stringify(leadSummary),
   })
   res.status(201).json(parseReport(report))
 })
